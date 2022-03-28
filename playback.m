@@ -1,0 +1,1 @@
+plot(reshape(pdm_2d_rot_global(1, 1, :), [], 1))

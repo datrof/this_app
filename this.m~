@@ -245,13 +245,14 @@ function exit_code = this(path, level)
     unixtime_global_numel=numel(unixtime_global);
     lightcurvesum_global_numel=numel(lightcurvesum_global);
 
+    diag_global(:,128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
     pdm_2d_rot_global(:,:,128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
     
     
     % More processing
 
     
-    % save variables to .mat file, removing zeros
+    % save variables to .mat file
 
     this_ver = "2";
     this_sub_ver = "1";
@@ -260,12 +261,9 @@ function exit_code = this(path, level)
     d1_period_us = 2.5;
     if(level==3)
         cwt_global = abs(cwt(lightcurvesum_global));
-        lightcurvesum_global(128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
-        diag_global(:,128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
+    lightcurvesum_global(128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
         save([path '/global_d3_nz.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_global', 'd3_period_us', 'cwt_global', '-v7.3');
     elseif(level==2) 
-        lightcurvesum_global(128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
-        diag_global(:,128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
         save([path '/global_d2.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_global', 'd2_period_us', '-v7.3');    
     elseif(level==1)
         %save([path '/global_d1.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_global', 'd1_period_us', '-v7.3');    
