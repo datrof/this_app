@@ -6,7 +6,7 @@ function exit_code = this(path, level)
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
     this_ver = "2";
-    this_sub_ver = "4";
+    this_sub_ver = "5";
 
     
     % Задание параметров программы
@@ -96,7 +96,7 @@ function exit_code = this(path, level)
         lightcurvesum_global = zeros(1,numel(listing)*n_of_frames_in_packet);
         unixtime_global = uint32(zeros(1, numel(listing)));
         ngtu_global = uint32(zeros(1, numel(listing)));
-    elseif(level==1)
+    else
         pdm_2d_rot_global = uint8(zeros(16,16,numel(listing)*n_of_frames_in_packet*4));
         diag_global = uint8(zeros(16,numel(listing)*n_of_frames_in_packet*4));
         lightcurvesum_global = zeros(1,numel(listing)*n_of_frames_in_packet*4);
@@ -148,15 +148,28 @@ function exit_code = this(path, level)
             end 
         end
 
-        unixtime_global(norm_file_cnt) = uint32(D_unixtime(3,1));
-        ngtu_global(norm_file_cnt) = uint32(D_ngtu(3,1));
+        if(level==3)
+            unixtime_global(norm_file_cnt) = uint32(D_unixtime(3,1));
+            ngtu_global(norm_file_cnt) = uint32(D_ngtu(3,1));
+            norm_file_cnt = norm_file_cnt+1;
+        elseif (level==2)
+            unixtime_global(norm_file_cnt) = uint32(D_unixtime(2,1));
+            unixtime_global(norm_file_cnt+1) = uint32(D_unixtime(2,2));
+            unixtime_global(norm_file_cnt+2) = uint32(D_unixtime(2,3));
+            unixtime_global(norm_file_cnt+3) = uint32(D_unixtime(2,4));
+            ngtu_global(norm_file_cnt) = uint32(D_ngtu(2,1));
+            ngtu_global(norm_file_cnt+1) = uint32(D_ngtu(2,2));
+            ngtu_global(norm_file_cnt+2) = uint32(D_ngtu(2,3));
+            ngtu_global(norm_file_cnt+3) = uint32(D_ngtu(2,4));
+            norm_file_cnt = norm_file_cnt+4;
+        end
         
-        norm_file_cnt = norm_file_cnt+1;
+        
 
         datasize = 294912*2^(level-1);
         %accumulation = 128^(level-1);
         %lightcurve_sum=zeros(128);
-        num_el=numel(sections_D(level,:)); if(level==3) num_el = num_el/4; end;
+        num_el=numel(sections_D(level,:)); if(level==3) num_el = num_el/4; end
         for packet=1:1:num_el
             if (D_tt(level,packet) == 0) && (only_triggered == 1)
                 continue;
@@ -250,16 +263,8 @@ function exit_code = this(path, level)
     
     diag_global(:,pdm_2d_rot_global_cnt) = diag(pdm_2d_rot); 
     
-    % removing zeros
-    
-    %unixtime_global_numel=numel(unixtime_global);
-    %unixtime_global(unixtime_global_numel-30:unixtime_global_numel)=[];
-    %ngtu_global(unixtime_global_numel-30:unixtime_global_numel)=[];
     unixtime_global_numel=numel(unixtime_global);
-    lightcurvesum_global_numel=numel(lightcurvesum_global);
-
-    %pdm_2d_rot_global(:,:,128*unixtime_global_numel+1 : lightcurvesum_global_numel-1) = [];
-    
+    lightcurvesum_global_numel=numel(lightcurvesum_global);  
     
     disp 'Generate double unix time'
     
@@ -278,8 +283,12 @@ function exit_code = this(path, level)
        
     for i=1:numel(ngtu_global)
         for j=1:num_of_frames
-            unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + j*128*128)*(2.5e-6);
-            %unixtime_dbl_global((i-1)*num_of_frames+j) = double(ngtu_u64_global(i) + j*128*128)*(2.5e-6);
+            if(level == 2) 
+                unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + j*128)*(2.5e-6);
+            end
+            if(level == 3) 
+                unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + j*128*128)*(2.5e-6);
+            end
         end
     end    
 
@@ -320,7 +329,7 @@ function exit_code = this(path, level)
     elseif(level==2) 
         lightcurvesum_global(128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];
         diag_global(:,128*unixtime_global_numel+1 : lightcurvesum_global_numel-1) = [];
-        save([path '/global_d2.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_global', 'd2_period_us', '-v7.3');    
+        save([path '/global_d2.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_dbl_global', 'd2_period_us', '-v7.3');    
     elseif(level==1)
         %save([path '/global_d1.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_global', 'd1_period_us', '-v7.3');    
         save([path '/global_d1.mat'], 'this_ver', 'this_sub_ver', 'pdm_2d_rot_global', 'unixtime_global', 'd1_period_us', '-v7.3');    
