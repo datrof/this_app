@@ -2,7 +2,9 @@
 % Version history
 % v1 initial
 function exit_code = this(path, level)
-   
+
+    level = str2num(level);
+    
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
     this_ver = "3";
