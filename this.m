@@ -87,12 +87,19 @@ function exit_code = this(path, level)
         unixtime_global = uint32(zeros(1, numel(listing)));
         ngtu_global = uint32(zeros(1, numel(listing)));
         sizeof_point = 4;
+    elseif(level==2)
+        pdm_2d_rot_global = uint8(zeros(16,16,numel(listing)*num_of_frames*3));
+        diag_global = uint8(zeros(16,numel(listing)*num_of_frames*3));
+        lightcurvesum_global = zeros(1,numel(listing)*num_of_frames*3);
+        unixtime_global = uint32(zeros(1, numel(listing)*3));
+        ngtu_global = uint32(zeros(1, numel(listing)*3));
+        sizeof_point = 2;
     else
-        pdm_2d_rot_global = uint8(zeros(16,16,numel(listing)*num_of_frames*4));
-        diag_global = uint8(zeros(16,numel(listing)*num_of_frames*4));
-        lightcurvesum_global = zeros(1,numel(listing)*num_of_frames*4);
-        unixtime_global = uint32(zeros(1, numel(listing)*4));
-        ngtu_global = uint32(zeros(1, numel(listing)*4));
+        pdm_2d_rot_global = uint8(zeros(16,16,numel(listing)*num_of_frames*3));
+        diag_global = uint8(zeros(16,numel(listing)*num_of_frames*3));
+        lightcurvesum_global = zeros(1,numel(listing)*num_of_frames*3);
+        unixtime_global = uint32(zeros(1, numel(listing)*3));
+        ngtu_global = uint32(zeros(1, numel(listing)*3));
         sizeof_point = 1;
     end
 
@@ -118,9 +125,14 @@ function exit_code = this(path, level)
         D_bytes=uint8(zeros(3, numel(sections), sizeof_point*frame_size*num_of_frames));
         D_tt = zeros(1, numel(sections(:)));
         D_ngtu = zeros(1, numel(sections));
-        for i=1:numel(sections)
-            if (sections ~= 0) || (only_triggered == 1)
-                if(level == 1 || level == 3)
+        if(level==1) 
+            numel_section = numel(sections) - 1;
+        else
+            numel_section = numel(sections);
+        end
+        for i=1:numel_section
+            if (sections(i) ~= 0) || (only_triggered == 1)
+                if(level == 1 || level == 2 || level == 3)
                     if(sections(i)+30+sizeof_point+strange_offset+sizeof_point*frame_size*num_of_frames-1) <= size(cpu_file, 1)
                         tmp=uint8(cpu_file(sections(i)+30+sizeof_point+strange_offset : sections(i)+30+sizeof_point+strange_offset+sizeof_point*frame_size*num_of_frames-1)); 
                         D_bytes(i,1:size(tmp)) = tmp(:);                                       
@@ -150,16 +162,24 @@ function exit_code = this(path, level)
             unixtime_global(norm_file_cnt) = uint32(D_unixtime(1));
             ngtu_global(norm_file_cnt) = uint32(D_ngtu(1));
             norm_file_cnt = norm_file_cnt+1;
-        %elseif (level==2)
-        %    unixtime_global(norm_file_cnt) = uint32(D_unixtime(2,1));
-        %    unixtime_global(norm_file_cnt+1) = uint32(D_unixtime(2,2));
-        %    unixtime_global(norm_file_cnt+2) = uint32(D_unixtime(2,3));
-        %    unixtime_global(norm_file_cnt+3) = uint32(D_unixtime(2,4));
-        %    ngtu_global(norm_file_cnt) = uint32(D_ngtu(2,1));
-        %    ngtu_global(norm_file_cnt+1) = uint32(D_ngtu(2,2));
-        %    ngtu_global(norm_file_cnt+2) = uint32(D_ngtu(2,3));
-        %    ngtu_global(norm_file_cnt+3) = uint32(D_ngtu(2,4));
-        %    norm_file_cnt = norm_file_cnt+4;
+        elseif (level == 1)
+            unixtime_global(norm_file_cnt) = uint32(D_unixtime(1));
+            unixtime_global(norm_file_cnt+1) = uint32(D_unixtime(2));
+            unixtime_global(norm_file_cnt+2) = uint32(D_unixtime(3));
+            ngtu_global(norm_file_cnt) = uint32(D_ngtu(1));
+            ngtu_global(norm_file_cnt+1) = uint32(D_ngtu(2));
+            ngtu_global(norm_file_cnt+2) = uint32(D_ngtu(3));
+            norm_file_cnt = norm_file_cnt+3;            
+        elseif (level==2)
+            unixtime_global(norm_file_cnt) = uint32(D_unixtime(1));
+            unixtime_global(norm_file_cnt+1) = uint32(D_unixtime(2));
+            unixtime_global(norm_file_cnt+2) = uint32(D_unixtime(3));
+            unixtime_global(norm_file_cnt+3) = uint32(D_unixtime(4));
+            ngtu_global(norm_file_cnt) = uint32(D_ngtu(1));
+            ngtu_global(norm_file_cnt+1) = uint32(D_ngtu(2));
+            ngtu_global(norm_file_cnt+2) = uint32(D_ngtu(3));
+            ngtu_global(norm_file_cnt+3) = uint32(D_ngtu(4));
+            norm_file_cnt = norm_file_cnt+4;
         end
         
         
@@ -167,8 +187,8 @@ function exit_code = this(path, level)
         datasize = sizeof_point*frame_size*num_of_frames;
         %accumulation = 128^(level-1);
         %lightcurve_sum=zeros(128);
-        num_el=numel(sections); 
-        for packet=1:1:num_el
+        %num_el=numel(sections); 
+        for packet=1:1:numel_section
             if (D_tt(packet) == 0) && (only_triggered == 1)
                 continue;
             end
@@ -335,7 +355,7 @@ function exit_code = this(path, level)
         save([path '/global_d2.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_dbl_global', 'period_us', '-v7.3');    
     elseif(level==1)
         %save([path '/global_d1.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_global', 'd1_period_us', '-v7.3');    
-        save([path '/global_d1.mat'], 'this_ver', 'this_sub_ver', 'pdm_2d_rot_global', 'unixtime_global', 'period_us', '-v7.3');    
+        save([path '/global_d1.mat'], 'this_ver', 'this_sub_ver', 'pdm_2d_rot_global', 'lightcurvesum_global', 'unixtime_global', 'period_us', '-v7.3');    
     end
     %save([path '/cwt_global.mat'], 'this_ver', 'this_sub_ver', );
     exit_code = 0;
