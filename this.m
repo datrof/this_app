@@ -8,7 +8,7 @@ function exit_code = this(path, level)
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
     this_ver = "3";
-    this_sub_ver = "0";
+    this_sub_ver = "1";
 
     
     % Задание параметров программы
@@ -106,9 +106,16 @@ function exit_code = this(path, level)
     for filename_cntr = 1:numel(listing) % указание на номера файлов, из которых будет произведено чтение
         %цикл, выполняющийся для каждого файла. 
 
-        filename = [path '/' listing(filename_cntr,1).name]; 
-        short_filename = [listing(filename_cntr,1).name]; 
-        filesize = dir(filename).bytes;
+        lst = listing(filename_cntr,1);
+        filename = [path '/' lst.name]; 
+        short_filename = [lst.name];
+        dir_fn = dir(filename);
+        filesize = dir_fn.bytes;
+        if(level==1 || level==2 || level==3)
+            if(filesize ~= 4718884)
+                continue;
+            end
+        end
 
         fid = fopen(filename);
 
