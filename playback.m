@@ -1,11 +1,11 @@
-plot(reshape(pdm_2d_rot_global(1, 1, :), [], 1))
+plot(reshape(pdm_2d_rot_global(1, 2, :), [], 1))
 
 fix_color_map = 0;
-colorbar_lim = 1;
-accumulation = 400;
+colorbar_lim = 0;
+accumulation = 1;
 frame_step = 1;
 
-for frame=1:frame_step:numel(pdm_2d_rot_global(1,1,:))
+for frame=128:frame_step:numel(pdm_2d_rot_global(1,1,:))
     if(fix_color_map == 0)
         imagesc(double(pdm_2d_rot_global(:,:,frame))/accumulation); 
     else
@@ -20,4 +20,4 @@ stop
 
 plot(unixtime_dbl_global, '.-');
 
-plot(lightcurvesum_global/accumulation, '.-');
+plot(lightcurvesum_global, '.-');

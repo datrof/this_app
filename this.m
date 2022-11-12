@@ -8,7 +8,7 @@ function exit_code = this(path, level)
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
     this_ver = "3";
-    this_sub_ver = "1";
+    this_sub_ver = "2";
 
     
     % Задание параметров программы
@@ -88,8 +88,8 @@ function exit_code = this(path, level)
         ngtu_global = uint32(zeros(1, numel(listing)));
         sizeof_point = 4;
     elseif(level==2)
-        pdm_2d_rot_global = uint8(zeros(16,16,numel(listing)*num_of_frames*3));
-        diag_global = uint8(zeros(16,numel(listing)*num_of_frames*3));
+        pdm_2d_rot_global = uint16(zeros(16,16,numel(listing)*num_of_frames*3));
+        diag_global = uint16(zeros(16,numel(listing)*num_of_frames*3));
         lightcurvesum_global = zeros(1,numel(listing)*num_of_frames*3);
         unixtime_global = uint32(zeros(1, numel(listing)*3));
         ngtu_global = uint32(zeros(1, numel(listing)*3));
