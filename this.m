@@ -58,8 +58,11 @@ function exit_code = this(path, level)
     magic_word(2,:) = [hex2dec('01') hex2dec('0B') hex2dec('01') hex2dec('5A') hex2dec('18') hex2dec('00') hex2dec('09') hex2dec('00')];
     % d3 Mini-EUSO 
     magic_word(3,:) = [hex2dec('01') hex2dec('0C') hex2dec('01') hex2dec('5A') hex2dec('1C') hex2dec('00') hex2dec('12') hex2dec('00')];
-    % d3 Tuloma 22-23
+    % d4 Tuloma 22-23
     magic_word(4,:) = [hex2dec('03') hex2dec('0C') hex2dec('1E') hex2dec('5A') hex2dec('1A') hex2dec('20') hex2dec('4E') hex2dec('00')];
+    % d5 Tuloma 22-23
+    magic_word(5,:) = [hex2dec('00') hex2dec('10') hex2dec('1E') hex2dec('5A') hex2dec('1A') hex2dec('98') hex2dec('3A') hex2dec('00')];
+
 
     
     cw90 = 3; % поворот МАФЭУ на 90 градусов по часовой стрелки 
