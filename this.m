@@ -7,8 +7,8 @@ function exit_code = this(path, level)
     
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
-    this_ver = "3";
-    this_sub_ver = "2";
+    this_ver = "4";
+    this_sub_ver = "0";
 
     
     % Задание параметров программы
@@ -32,12 +32,16 @@ function exit_code = this(path, level)
 
     n_active_pixels = 256; % needed for lightcurves.
     
+    period_us(5) = 1000;
     period_us(4) = 1000;
     period_us(3) = 2.5*128*128;
     period_us(2) = 2.5*128;
     period_us(1) = 2.5;
-
-    if(level==4)
+    
+    if(level==5)
+        frame_size=16; % задать число пикселей ФПУ / number of pixels on FS
+        num_of_frames=60000; % задать число фреймов в пакете / number of frames per packet        
+    elseif(level==4)
         frame_size=256; % задать число пикселей ФПУ / number of pixels on FS
         num_of_frames=5000; % задать число фреймов в пакете / number of frames per packet        
         dimx_ecasic = 8; %задать размер по х блока данных, выдаваемый платой ECASIC
@@ -60,7 +64,7 @@ function exit_code = this(path, level)
     magic_word(3,:) = [hex2dec('01') hex2dec('0C') hex2dec('01') hex2dec('5A') hex2dec('1C') hex2dec('00') hex2dec('12') hex2dec('00')];
     % d4 Tuloma 22-23
     magic_word(4,:) = [hex2dec('03') hex2dec('0C') hex2dec('1E') hex2dec('5A') hex2dec('1A') hex2dec('20') hex2dec('4E') hex2dec('00')];
-    % d5 Tuloma 22-23
+    % d5 Tuloma 22-23 Spectral data
     magic_word(5,:) = [hex2dec('00') hex2dec('10') hex2dec('1E') hex2dec('5A') hex2dec('1A') hex2dec('98') hex2dec('3A') hex2dec('00')];
 
 
@@ -75,15 +79,26 @@ function exit_code = this(path, level)
     norm_file_cnt = 1;
     gif_cnt = 0;
     
-    listing = dir([path '/frm_*.dat']);
+    if(level==5)
+        listing = dir([path '/frm*sp*.dat']);
+    else
+        listing = dir([path '/frm*d3*.dat']);
+    end
 
     if(numel(listing) == 0) 
         display('No .dat files found in the specified folder');
         exit_code = -1;
         return;
-    end    
-          
-    if(level==3 || level==4) 
+    end
+    
+    if(level==5)
+        sp_global = zeros(16, numel(listing)*num_of_frames);
+        unixtime_global = uint32(zeros(1, numel(listing)));
+        D_tushv_global  = uint8(zeros(1, numel(listing)))*12;
+        unixtime_dbl_global = zeros(1,numel(listing)*num_of_frames);
+        ngtu_global = uint32(zeros(1, numel(listing)));
+        sizeof_point = 4;
+    elseif(level==3 || level==4)
         pdm_2d_rot_global = uint32(zeros(16,16,numel(listing)*num_of_frames));
         diag_global = uint32(zeros(16,numel(listing)*num_of_frames));
         lightcurvesum_global = zeros(1,numel(listing)*num_of_frames);
@@ -118,6 +133,14 @@ function exit_code = this(path, level)
             if(filesize ~= 4718884)
                 continue;
             end
+        elseif(level==4)
+            if(filesize ~= 5120064)
+                continue;
+            end
+        elseif(level==5)
+            if(filesize ~= 3840064)
+                continue;
+            end
         end
 
         fid = fopen(filename);
@@ -131,15 +154,16 @@ function exit_code = this(path, level)
         addrs = strfind(cpu_file',magic_word(level,:));        
         sections(1:numel(addrs)) = addrs;
         
-        strange_offset = 2;
-        D_bytes=uint8(zeros(3, numel(sections), sizeof_point*frame_size*num_of_frames));
-        D_tt = zeros(1, numel(sections(:)));
-        D_ngtu = zeros(1, numel(sections));
+        
+        %D_bytes=uint8(zeros(3, numel(sections), sizeof_point*frame_size*num_of_frames));
+        %D_tt = zeros(1, numel(sections(:)));
+        %D_ngtu = zeros(1, numel(sections));
         if(level==1) 
             numel_section = numel(sections) - 1;
         else
             numel_section = numel(sections);
         end
+        strange_offset = 2;
         for i=1:numel_section
             if (sections(i) ~= 0) || (only_triggered == 1)
                 if(level == 1 || level == 2 || level == 3)
@@ -160,18 +184,23 @@ function exit_code = this(path, level)
                         D_ngtu(i) = typecast(uint8(cpu_file(sections(i)+8:sections(i)+11)), 'uint32');
                         D_unixtime(i) = typecast(uint8(cpu_file(sections(i)+12:sections(i)+15)), 'uint32');
                         D_tt(i) = uint8(cpu_file(sections(i)+16));
-                        %D_cath(j,i,:) = uint8(cpu_file(sections_D(j,i)+20:sections_D(j,i)+31));
-                        %if D_tt(j,i)>2
-                        %    D_tt(j,i) = 0;
-                        %end
+                elseif(level == 5)
+                        tmp=uint8(cpu_file(sections(i)+28 : sections(i)+28+4*frame_size*num_of_frames-1)); 
+                        D_bytes(i,1:size(tmp)) = tmp(:);                                       
+                        D_ngtu(i) = typecast(uint8(cpu_file(sections(i)+8:sections(i)+11)), 'uint32');
+                        D_unixtime(i) = typecast(uint8(cpu_file(sections(i)+12:sections(i)+15)), 'uint32');
+                        D_tushv(1:8)  = cpu_file(sections(i)+16:sections(i)+23);
                 end
             end
         end 
 
-        if(level==3 || level==4)
+        if(level==3 || level==4 || level==5)
             unixtime_global(norm_file_cnt) = uint32(D_unixtime(1));
             ngtu_global(norm_file_cnt) = uint32(D_ngtu(1));
             norm_file_cnt = norm_file_cnt+1;
+            if(level==5)
+                D_tushv_global(norm_file_cnt*8-7:norm_file_cnt*8) = D_tushv;
+            end 
         elseif (level == 1)
             unixtime_global(norm_file_cnt) = uint32(D_unixtime(1));
             unixtime_global(norm_file_cnt+1) = uint32(D_unixtime(2));
@@ -199,13 +228,15 @@ function exit_code = this(path, level)
         %lightcurve_sum=zeros(128);
         %num_el=numel(sections); 
         for packet=1:1:numel_section
-            if (D_tt(packet) == 0) && (only_triggered == 1)
-                continue;
+            if(level<=3)
+                if (D_tt(packet) == 0) && (only_triggered == 1)
+                  continue;
+                end
             end
             %fprintf('T:%d\n', packet);
 
             frame_data = reshape(D_bytes(packet,1:datasize), [1 datasize]); % выбрать из всех данных, полученных из файла, блок, содержащий изображение / take subarray with only image data
-            if (level == 3 || level == 4)% случай триггера уровня 3
+            if (level == 3 || level == 4 || level == 5)% случай триггера уровня 3
                 frame_data_cast = typecast(frame_data(:), 'uint32'); %преобразовать представление данных к  uint32 // convert to uint32
             elseif level == 2% случай триггера уровня 2
                 frame_data_cast = typecast(frame_data(:), 'uint16');%преобразовать представление данных к  uint16 // convert to uint16
@@ -213,84 +244,87 @@ function exit_code = this(path, level)
                 frame_data_cast = frame_data;% оставить представление данных без изменения  // leave unchanged
             end
             frames = reshape(frame_data_cast, [frame_size num_of_frames]); % перегруппировать массив из одномерного в двумерный
-
+            
             % Формирование изображения на экране
-            %for current_frame=1:1:num_of_frames % для каждого фрейма, прочитанного из файла / for each file in directory
-            for current_frame=1:frame_step:num_of_frames % для каждого фрейма, прочитанного из файла / for each file in directory
-                %disp(current_frame); % вывести значение переменной на экран / print to log screen
-                if(do_rescale == 1)
-                    pic = (frames(:, current_frame)');% выбрать один фрейм из блока данных, который содержит все фреймы / select just one frame
-                else
-                    pic = (frames(:, current_frame)');
-                end
-                %                                 
-                ecasics_2d = fliplr(reshape(pic', [dimx_ecasic dimy_ecasic n_ecasic])); % сформировать двумерный массив 8х48, содержащий изображение одного фрейма / form an array 8x48 with just one frame
+            if (level == 1 || level == 2 || level == 3 || level == 4)
+                for current_frame=1:frame_step:num_of_frames % для каждого фрейма, прочитанного из файла / for each file in directory
+                    %disp(current_frame); % вывести значение переменной на экран / print to log screen
+                    if(do_rescale == 1)
+                        pic = (frames(:, current_frame)');% выбрать один фрейм из блока данных, который содержит все фреймы / select just one frame
+                    else
+                        pic = (frames(:, current_frame)');
+                    end
+                    %                                 
+                    ecasics_2d = fliplr(reshape(pic', [dimx_ecasic dimy_ecasic n_ecasic])); % сформировать двумерный массив 8х48, содержащий изображение одного фрейма / form an array 8x48 with just one frame
 
-                % сформировать двумерный массив 48х48, содержащий изображение одного фрейма 
-                if(n_ecasic == 6)
-                    pdm_2d = [ecasics_2d(:,:,1)' ecasics_2d(:,:,2)' ecasics_2d(:,:,3)' ecasics_2d(:,:,4)' ecasics_2d(:,:,5)' ecasics_2d(:,:,6)']; % form an array 48x48 with just one frame
-                else
-                    pdm_2d = [ecasics_2d(:,:,1)' ecasics_2d(:,:,2)'];
-                end
-                    
-                % выполнить поворот элементов изображения в зависимости от
-                % расположения
-                % here we rotate PMTs depending on their positions 
+                    % сформировать двумерный массив 48х48, содержащий изображение одного фрейма 
+                    if(n_ecasic == 6)
+                        pdm_2d = [ecasics_2d(:,:,1)' ecasics_2d(:,:,2)' ecasics_2d(:,:,3)' ecasics_2d(:,:,4)' ecasics_2d(:,:,5)' ecasics_2d(:,:,6)']; % form an array 48x48 with just one frame
+                    else
+                        pdm_2d = [ecasics_2d(:,:,1)' ecasics_2d(:,:,2)'];
+                    end
 
-                pdm_2d_rot = pdm_2d; % подготовить выходной массив для повернутых данных. Проинициализировать массив начальными данными до поворота
-                if(rotation_needed)
-                    for i=0:n_ecasic-1 %для каждой строки элементов изображения 8х8 (МАФЭУ)
-                        for j=0:dimy_ecasic/8-1 %для каждого столбца элементов изображения 8х8 (МАФЭУ)
-                            if((rem(i,2)==0) && (rem(j,2)==0))%условия поворота
-                               pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), cw180));%поворот по часовой стрелке %rot90 cw90
-                            end
-                            if((rem(i,2)==0) && (rem(j,2)==1))%условия поворота
-                               pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), cw90));%поворот по часовой стрелке
-                            end
-                            if((rem(i,2)==1) && (rem(j,2)==0))%условия поворота
-                               pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), ccw90));%поворот по часовой стрелке
-                            end
-                            if((rem(i,2)==1) && (rem(j,2)==1))%условия поворота
-                               pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), 0));%зеркально отобразить fliplr
-                            end
-                       end
-                    end            
-                end
+                    % выполнить поворот элементов изображения в зависимости от
+                    % расположения
+                    % here we rotate PMTs depending on their positions 
 
-                if(mode_mlt == 1)
-                    tmp_var=pdm_2d_rot; clear pdm_2d_rot; pdm_2d_rot = tmp_var(33:48,1:16);
-                    if(bad_pixel_removal==1)
-                       pdm_2d_rot(11,2)=pdm_2d_rot(11,3);    
+                    pdm_2d_rot = pdm_2d; % подготовить выходной массив для повернутых данных. Проинициализировать массив начальными данными до поворота
+                    if(rotation_needed)
+                        for i=0:n_ecasic-1 %для каждой строки элементов изображения 8х8 (МАФЭУ)
+                            for j=0:dimy_ecasic/8-1 %для каждого столбца элементов изображения 8х8 (МАФЭУ)
+                                if((rem(i,2)==0) && (rem(j,2)==0))%условия поворота
+                                   pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), cw180));%поворот по часовой стрелке %rot90 cw90
+                                end
+                                if((rem(i,2)==0) && (rem(j,2)==1))%условия поворота
+                                   pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), cw90));%поворот по часовой стрелке
+                                end
+                                if((rem(i,2)==1) && (rem(j,2)==0))%условия поворота
+                                   pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), ccw90));%поворот по часовой стрелке
+                                end
+                                if((rem(i,2)==1) && (rem(j,2)==1))%условия поворота
+                                   pdm_2d_rot(i*8+1:i*8+8, j*8+1:j*8+8) = fliplr(rot90(pdm_2d(i*8+1:i*8+8, j*8+1:j*8+8), 0));%зеркально отобразить fliplr
+                                end
+                           end
+                        end            
+                    end
+
+                    if(mode_mlt == 1)
+                        tmp_var=pdm_2d_rot; clear pdm_2d_rot; pdm_2d_rot = tmp_var(33:48,1:16);
+                        if(bad_pixel_removal==1)
+                           pdm_2d_rot(11,2)=pdm_2d_rot(11,3);    
+                        end
+                    end
+                    pdm_2d_rot_global_cnt = pdm_2d_rot_global_cnt + 1;
+                    pdm_2d_rot_global(:,:,pdm_2d_rot_global_cnt) = pdm_2d_rot;
+
+
+                    current_frame_global = current_frame_global + 1;
+                    if one_pixel == 0
+                        lightcurvesum(current_frame)=sum(pic)/n_active_pixels;
+                        lightcurvesum_global(current_frame_global) = sum(pic)/n_active_pixels;
+                    else
+                        lightcurvesum(current_frame)=(pdm_2d_rot(pixel_y,pixel_x));
+                        lightcurvesum_global(current_frame_global) = (pdm_2d_rot(pixel_y,pixel_x));                       
                     end
                 end
-                pdm_2d_rot_global_cnt = pdm_2d_rot_global_cnt + 1;
-                pdm_2d_rot_global(:,:,pdm_2d_rot_global_cnt) = pdm_2d_rot;
-                                      
-
-                current_frame_global = current_frame_global + 1;
-                if one_pixel == 0
-                    lightcurvesum(current_frame)=sum(pic)/n_active_pixels;
-                    lightcurvesum_global(current_frame_global) = sum(pic)/n_active_pixels;
-                else
-                    lightcurvesum(current_frame)=(pdm_2d_rot(pixel_y,pixel_x));
-                    lightcurvesum_global(current_frame_global) = (pdm_2d_rot(pixel_y,pixel_x));                       
-                end
-            end 
-            %D_cath(level,i)'
+            elseif(level==5)
+                sp_global(:,filename_cntr*num_of_frames:(filename_cntr+1)*num_of_frames-1) = frames;
+            end
         end
-        %plot(D_ngtu(3,:),'.-');
     end
     
-    diag_global(:,pdm_2d_rot_global_cnt) = diag(pdm_2d_rot); 
+    if(level <= 4)
+        diag_global(:,pdm_2d_rot_global_cnt) = diag(pdm_2d_rot);
+        lightcurvesum_global_numel=numel(lightcurvesum_global);  
+    end
     
     unixtime_global_numel=numel(unixtime_global);
-    lightcurvesum_global_numel=numel(lightcurvesum_global);  
+    
     
     disp 'Generate double unix time'
     
     dngtu=diff(double(ngtu_global));
     ngtu_u64_global = uint64(zeros(1, numel(ngtu_global)));
-    unixtime_dbl_global = zeros(1, numel(lightcurvesum_global)); 
     ovflw_cnt = 0;
     ngtu_u64_global(1) = double(ngtu_global(1));
     ngtu_u64_global(2) = double(ngtu_global(2));
@@ -306,20 +340,19 @@ function exit_code = this(path, level)
         for j=1:num_of_frames
             if(level == 2) 
                 unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + j*128)*(2.5e-6);
-            end
-            if(level == 3) 
+            elseif(level == 3) 
                 unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + j*128*128)*(2.5e-6);
-            end
-            if(level == 4) 
+            elseif(level == 4) 
                 unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + k*400)*(2.5e-6);
-                %unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1) + 5400) + double(k*400)*(2.5e-6);
                 k=k+1;
+            elseif(level == 5) 
+                unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + k*1000)*(1e-6);
+                k=k+1;            
             end
-            
         end
     end
     
-    if(level ~= 4)
+    if(level <= 3)
         
         disp 'Removing frames with wrong timestamps'
 
@@ -350,8 +383,12 @@ function exit_code = this(path, level)
     
    disp 'Saving martixes to .mat file'
 
-
-   if(level==4)
+   if(level==5)
+        unixtime_dbl_sp_global = unixtime_dbl_global;
+        sp_letter = ["A","I","B","J","C","K","D","L","E","M","F","N","G","Q","H","P"];
+        sp_func = ["KC-11","UFS-1","EMPTY","J","430","337","EMPTY","EMPTY","EMPTY","M","EMPTY","EMPTY","EMPTY","Q","H","390"];
+        save([path '/tuloma2223_sp.mat'], 'this_ver', 'this_sub_ver', 'sp_global', 'sp_letter', 'sp_func', 'unixtime_dbl_sp_global', 'period_us', '-v7.3');
+   elseif(level==4)
         save([path '/tuloma2223.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_dbl_global', 'period_us', '-v7.3');
    elseif(level==3)
         cwt_global = abs(cwt(lightcurvesum_global));
