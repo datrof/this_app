@@ -8,7 +8,7 @@ function exit_code = this(path, level)
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
     this_ver = "4";
-    this_sub_ver = "0";
+    this_sub_ver = "1";
 
     
     % Задание параметров программы
@@ -197,10 +197,10 @@ function exit_code = this(path, level)
         if(level==3 || level==4 || level==5)
             unixtime_global(norm_file_cnt) = uint32(D_unixtime(1));
             ngtu_global(norm_file_cnt) = uint32(D_ngtu(1));
-            norm_file_cnt = norm_file_cnt+1;
             if(level==5)
                 D_tushv_global(norm_file_cnt*8-7:norm_file_cnt*8) = D_tushv;
-            end 
+            end
+            norm_file_cnt = norm_file_cnt+1;
         elseif (level == 1)
             unixtime_global(norm_file_cnt) = uint32(D_unixtime(1));
             unixtime_global(norm_file_cnt+1) = uint32(D_unixtime(2));
@@ -308,7 +308,7 @@ function exit_code = this(path, level)
                     end
                 end
             elseif(level==5)
-                sp_global(:,filename_cntr*num_of_frames:(filename_cntr+1)*num_of_frames-1) = frames;
+                sp_global(:,(filename_cntr-1)*num_of_frames+1:filename_cntr*num_of_frames) = frames;
             end
         end
     end
@@ -343,10 +343,10 @@ function exit_code = this(path, level)
             elseif(level == 3) 
                 unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + j*128*128)*(2.5e-6);
             elseif(level == 4) 
-                unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + k*400)*(2.5e-6);
+                unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + k*400)*(2.5e-6)-5;
                 k=k+1;
             elseif(level == 5) 
-                unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + k*1000)*(1e-6);
+                unixtime_dbl_global((i-1)*num_of_frames+j)=double(unixtime_global(1)) + double(ngtu_u64_global(i) + k*1000)*(1e-6)-60;
                 k=k+1;            
             end
         end
@@ -387,7 +387,7 @@ function exit_code = this(path, level)
         unixtime_dbl_sp_global = unixtime_dbl_global;
         sp_letter = ["A","I","B","J","C","K","D","L","E","M","F","N","G","Q","H","P"];
         sp_func = ["KC-11","UFS-1","EMPTY","J","430","337","EMPTY","EMPTY","EMPTY","M","EMPTY","EMPTY","EMPTY","Q","H","390"];
-        save([path '/tuloma2223_sp.mat'], 'this_ver', 'this_sub_ver', 'sp_global', 'sp_letter', 'sp_func', 'unixtime_dbl_sp_global', 'period_us', '-v7.3');
+        save([path '/tuloma2223_sp.mat'], 'this_ver', 'this_sub_ver', 'sp_global', 'sp_letter', 'sp_func', 'unixtime_dbl_sp_global', 'D_tushv_global', 'period_us', '-v7.3');
    elseif(level==4)
         save([path '/tuloma2223.mat'], 'this_ver', 'this_sub_ver', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global', 'unixtime_dbl_global', 'period_us', '-v7.3');
    elseif(level==3)
