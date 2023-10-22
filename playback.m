@@ -2,17 +2,17 @@ plot(reshape(pdm_2d_rot_global(1, 2, :), [], 1))
 
 fix_color_map = 0;
 colorbar_lim = 1;
-accumulation = 400;
-frame_step = 1;
+accumulation = 4000;
+frame_step = 100;
 
-for frame=1:frame_step:numel(pdm_2d_rot_global(1,1,:))
+for frame=330:frame_step:numel(pdm_2d_rot_global(1,1,:))
     if(fix_color_map == 0)
         imagesc(double(pdm_2d_rot_global(:,:,frame))/accumulation); 
     else
         imagesc(double(pdm_2d_rot_global(:,:,frame))/accumulation, [0 colorbar_lim]); 
     end
     colorbar;
-    pause(1);
+    pause(0.02);
     frame
 end
 
