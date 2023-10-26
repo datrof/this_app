@@ -1,0 +1,698 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>playback</title><meta name="generator" content="MATLAB 9.7"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-01-17"><meta name="DC.source" content="playback.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput">plot(reshape(pdm_2d_rot_global(1, 2, :), [], 1))
+
+fix_color_map = 0;
+colorbar_lim = 0.004;
+accumulation = 400;
+frame_step = 1;
+
+<span class="keyword">for</span> frame=128:frame_step:numel(pdm_2d_rot_global(1,1,:))
+    <span class="keyword">if</span>(fix_color_map == 0)
+        imagesc(double(pdm_2d_rot_global(:,:,frame))/accumulation);
+    <span class="keyword">else</span>
+        imagesc(double(pdm_2d_rot_global(:,:,frame))/accumulation, [0 colorbar_lim]);
+    <span class="keyword">end</span>
+    colorbar;
+    pause(0.01);
+    frame
+<span class="keyword">end</span>
+
+stop
+
+plot(unixtime_dbl_global, <span class="string">'.-'</span>);
+
+plot(lightcurvesum_global, <span class="string">'.-'</span>);
+
+cwt(lightcurvesum_global);
+
+<span class="comment">%lightcurvesum_global(:,1:3) = [];</span>
+w=hann(numel(lightcurvesum_global));
+plot(20*log10(abs(fft(w'.*lightcurvesum_global))),<span class="string">'.-'</span>);
+<span class="comment">%plot((abs(fft(w'.*lightcurvesum_global))),'.-');</span>
+
+N = numel(lightcurvesum_global);
+DF = 100;
+pdm_2d_rot_global_lafft = 20*log10(abs(fft(pdm_2d_rot_global,N,3)));
+pdm_2d_rot_global_lafft_dec = zeros(16,16,N/DF);
+
+<span class="keyword">for</span> i=1:16
+    <span class="keyword">for</span> j=1:16
+        <span class="keyword">if</span> (i==9) &amp;&amp; (j==3)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (i==10) &amp;&amp; (j==2)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (i==10) &amp;&amp; (j==4)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (i==11) &amp;&amp; (j==2)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (i==12) &amp;&amp; (j==2)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (i==16) &amp;&amp; (j==5)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (i==16) &amp;&amp; (j==6)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (i==16) &amp;&amp; (j==7)
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+        pdm_2d_rot_global_lafft_dec(i,j,:) = decimate(reshape(pdm_2d_rot_global_lafft(i,j,:),[1 N]), 100);
+        <span class="comment">%pdm_2d_rot_global_lafft = 20*log10(abs(fft(pdm_2d_rot_global(i,j,:))));</span>
+        <span class="comment">%plot(reshape(pdm_2d_rot_global_lafft(i,j,:),[1 N]),'.-');</span>
+        <span class="comment">%plot(reshape(pdm_2d_rot_global_lafft,[1 N]),'.-');</span>
+        <span class="comment">%pause(1);</span>
+        fprintf(<span class="string">'%d %d\n'</span>,i,j);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+fix_color_map = 1;
+colorbar_lim = 70;
+frame_step=1;
+
+<span class="keyword">for</span> frame=1:frame_step:numel(pdm_2d_rot_global_lafft_dec(1,1,:))
+    <span class="keyword">if</span>(fix_color_map == 0)
+        imagesc(double(pdm_2d_rot_global_lafft_dec(:,:,frame)));
+    <span class="keyword">else</span>
+        imagesc(double(pdm_2d_rot_global_lafft_dec(:,:,frame)), [20 colorbar_lim]);
+    <span class="keyword">end</span>
+    colorbar;
+    pause(0.1);
+    frame
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+frame =
+
+   128
+
+
+frame =
+
+   129
+
+
+frame =
+
+   130
+
+
+frame =
+
+   131
+
+
+frame =
+
+   132
+
+
+frame =
+
+   133
+
+
+frame =
+
+   134
+
+
+frame =
+
+   135
+
+
+frame =
+
+   136
+
+
+frame =
+
+   137
+
+
+frame =
+
+   138
+
+
+frame =
+
+   139
+
+
+frame =
+
+   140
+
+
+frame =
+
+   141
+
+
+frame =
+
+   142
+
+
+frame =
+
+   143
+
+
+frame =
+
+   144
+
+
+frame =
+
+   145
+
+
+frame =
+
+   146
+
+
+frame =
+
+   147
+
+
+frame =
+
+   148
+
+
+frame =
+
+   149
+
+
+frame =
+
+   150
+
+
+frame =
+
+   151
+
+
+frame =
+
+   152
+
+
+frame =
+
+   153
+
+
+frame =
+
+   154
+
+
+frame =
+
+   155
+
+
+frame =
+
+   156
+
+
+frame =
+
+   157
+
+
+frame =
+
+   158
+
+
+frame =
+
+   159
+
+
+frame =
+
+   160
+
+
+frame =
+
+   161
+
+
+frame =
+
+   162
+
+
+frame =
+
+   163
+
+
+frame =
+
+   164
+
+
+frame =
+
+   165
+
+
+frame =
+
+   166
+
+
+frame =
+
+   167
+
+
+frame =
+
+   168
+
+
+frame =
+
+   169
+
+
+frame =
+
+   170
+
+
+frame =
+
+   171
+
+
+frame =
+
+   172
+
+
+frame =
+
+   173
+
+
+frame =
+
+   174
+
+
+frame =
+
+   175
+
+
+frame =
+
+   176
+
+
+frame =
+
+   177
+
+
+frame =
+
+   178
+
+
+frame =
+
+   179
+
+
+frame =
+
+   180
+
+
+frame =
+
+   181
+
+
+frame =
+
+   182
+
+
+frame =
+
+   183
+
+
+frame =
+
+   184
+
+
+frame =
+
+   185
+
+
+frame =
+
+   186
+
+
+frame =
+
+   187
+
+
+frame =
+
+   188
+
+
+frame =
+
+   189
+
+
+frame =
+
+   190
+
+
+frame =
+
+   191
+
+
+frame =
+
+   192
+
+
+frame =
+
+   193
+
+
+frame =
+
+   194
+
+
+frame =
+
+   195
+
+
+frame =
+
+   196
+
+
+frame =
+
+   197
+
+
+frame =
+
+   198
+
+
+frame =
+
+   199
+
+
+frame =
+
+   200
+
+
+frame =
+
+   201
+
+
+frame =
+
+   202
+
+
+frame =
+
+   203
+
+
+frame =
+
+   204
+
+
+frame =
+
+   205
+
+
+frame =
+
+   206
+
+
+frame =
+
+   207
+
+
+frame =
+
+   208
+
+
+frame =
+
+   209
+
+
+frame =
+
+   210
+
+
+frame =
+
+   211
+
+
+frame =
+
+   212
+
+
+frame =
+
+   213
+
+
+frame =
+
+   214
+
+
+frame =
+
+   215
+
+
+frame =
+
+   216
+
+
+frame =
+
+   217
+
+</pre><pre class="codeoutput error">Error using pause
+Operation terminated by user
+
+Error in playback (line 15)
+    pause(0.01);
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+plot(reshape(pdm_2d_rot_global(1, 2, :), [], 1))
+
+fix_color_map = 0;
+colorbar_lim = 0.004;
+accumulation = 400;
+frame_step = 1;
+
+for frame=128:frame_step:numel(pdm_2d_rot_global(1,1,:))
+    if(fix_color_map == 0)
+        imagesc(double(pdm_2d_rot_global(:,:,frame))/accumulation); 
+    else
+        imagesc(double(pdm_2d_rot_global(:,:,frame))/accumulation, [0 colorbar_lim]); 
+    end
+    colorbar;
+    pause(0.01);
+    frame
+end
+
+stop
+
+plot(unixtime_dbl_global, '.-');
+
+plot(lightcurvesum_global, '.-');
+
+cwt(lightcurvesum_global);
+
+%lightcurvesum_global(:,1:3) = [];
+w=hann(numel(lightcurvesum_global));
+plot(20*log10(abs(fft(w'.*lightcurvesum_global))),'.-');
+%plot((abs(fft(w'.*lightcurvesum_global))),'.-');
+
+N = numel(lightcurvesum_global);
+DF = 100;
+pdm_2d_rot_global_lafft = 20*log10(abs(fft(pdm_2d_rot_global,N,3)));
+pdm_2d_rot_global_lafft_dec = zeros(16,16,N/DF);
+
+for i=1:16
+    for j=1:16
+        if (i==9) && (j==3)
+            continue;
+        end
+        if (i==10) && (j==2)
+            continue;
+        end
+        if (i==10) && (j==4)
+            continue;
+        end
+        if (i==11) && (j==2)
+            continue;
+        end
+        if (i==12) && (j==2)
+            continue;
+        end
+        if (i==16) && (j==5)
+            continue;
+        end
+        if (i==16) && (j==6)
+            continue;
+        end
+        if (i==16) && (j==7)
+            continue;
+        end
+        pdm_2d_rot_global_lafft_dec(i,j,:) = decimate(reshape(pdm_2d_rot_global_lafft(i,j,:),[1 N]), 100);
+        %pdm_2d_rot_global_lafft = 20*log10(abs(fft(pdm_2d_rot_global(i,j,:))));
+        %plot(reshape(pdm_2d_rot_global_lafft(i,j,:),[1 N]),'.-');
+        %plot(reshape(pdm_2d_rot_global_lafft,[1 N]),'.-');
+        %pause(1);
+        fprintf('%d %d\n',i,j);
+    end
+end
+
+fix_color_map = 1;
+colorbar_lim = 70;
+frame_step=1;
+
+for frame=1:frame_step:numel(pdm_2d_rot_global_lafft_dec(1,1,:))
+    if(fix_color_map == 0)
+        imagesc(double(pdm_2d_rot_global_lafft_dec(:,:,frame))); 
+    else
+        imagesc(double(pdm_2d_rot_global_lafft_dec(:,:,frame)), [20 colorbar_lim]); 
+    end
+    colorbar;
+    pause(0.1);
+    frame
+end
+
+##### SOURCE END #####
+--></body></html>

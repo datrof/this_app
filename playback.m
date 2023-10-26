@@ -2,7 +2,7 @@ plot(reshape(pdm_2d_rot_global(1, 2, :), [], 1))
 
 fix_color_map = 0;
 colorbar_lim = 1;
-accumulation = 4000;
+accumulation = 1;
 frame_step = 100;
 
 for frame=330:frame_step:numel(pdm_2d_rot_global(1,1,:))
