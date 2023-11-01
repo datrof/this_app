@@ -14,7 +14,7 @@ function exit_code = this(path, level, Ts)
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
     this_ver = "5";
-    this_sub_ver = "3";
+    this_sub_ver = "4";
 
     
     % Задание параметров программы
@@ -460,10 +460,19 @@ function exit_code = this(path, level, Ts)
         end
     end
     
+   disp 'Generating light curve with lower resolution'
+   if(level==4 || level==6)
+       period_us_decim = 20000; 
+       decim_factor = period_us_decim / period_us; 
+       lightcurvesum_global_decim = decimate(lightcurvesum_global, decim_factor);
+       unixtime_dbl_global_decim = unixtime_dbl_global(1:decim_factor:end);
+   end    
+       
    disp 'Saving martixes to .mat file'
 
    if(level==6)
         save([path '/lovozero.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global','lightcurvesum_global', 'pdm_2d_rot_global', 'pdm_2d_sp_global' ,'period_us', '-v7.3');
+        save([path '/lovozero_decim.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global_decim','lightcurvesum_global_decim', 'period_us_decim', '-v7.3');
    elseif(level==5)
         unixtime_dbl_sp_global = unixtime_dbl_global;
         sp_letter = ["A","I","B","J","C","K","D","L","E","M","F","N","G","Q","H","P"];
@@ -471,6 +480,7 @@ function exit_code = this(path, level, Ts)
         save([path '/tuloma_sp.mat'], 'this_ver', 'this_sub_ver', 'sp_global', 'sp_letter', 'sp_func', 'unixtime_dbl_sp_global', 'D_tushv_global', 'period_us', '-v7.3');
    elseif(level==4)
         save([path '/tuloma.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global',  'period_us', '-v7.3');
+        save([path '/tuloma_decim.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global_decim', 'lightcurvesum_global_decim', 'period_us_decim', '-v7.3');
    elseif(level==3)
         cwt_global = abs(cwt(lightcurvesum_global));
         lightcurvesum_global(128*unixtime_global_numel+1 : lightcurvesum_global_numel) = [];

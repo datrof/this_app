@@ -14,7 +14,7 @@ function exit_code = this(path, level, Ts)
     display('JEM-EUSO .dat to .mat preprocessor'); 
 
     this_ver = "5";
-    this_sub_ver = "3";
+    this_sub_ver = "4";
 
     
     % Задание параметров программы
@@ -38,12 +38,12 @@ function exit_code = this(path, level, Ts)
 
     n_active_pixels = 256; % needed for lightcurves.
     
-    period_us(6) = (Ts*400); %Lovozero
-    period_us(5) = 1000; %Tuloma SP channel
-    period_us(4) = 1000; %Tuloma 2nd season
-    period_us(3) = 2.5*128*128; %Mini-EUSO L3 (Tuloma 1st season)
-    period_us(2) = 2.5*128; %Mini-EUSO L2 (Tuloma 1st season)
-    period_us(1) = 2.5; %Mini-EUSO L1 (Tuloma 1st season)
+    
+    
+    
+    
+    
+    
 
     if(level==5)
         listing = dir([path '/frm*sp*.dat']);
@@ -56,6 +56,7 @@ function exit_code = this(path, level, Ts)
     end
     
     if(level==6)
+        period_us = (Ts*1000); %Lovozero
         frame_size=2880; % задать число пикселей ФПУ / number of pixels on FS
         num_of_frames=determine_n_frames(listing); % 
         dimx_ecasic = 8; %задать размер по х блока данных, выдаваемый платой ECASIC
@@ -63,10 +64,12 @@ function exit_code = this(path, level, Ts)
         n_ecasic=6;% задать количество плат ECASIC
         magic_word = [hex2dec('03') hex2dec('0C') hex2dec('16') hex2dec('5A')];%hex2dec('1A') hex2dec('94') hex2dec('11') hex2dec('00')
     elseif(level==5)
+        period_us = 1000; %Tuloma SP channel
         frame_size=16; % задать число пикселей ФПУ / number of pixels on FS
         num_of_frames=60000; % задать число фреймов в пакете / number of frames per packet
         magic_word = [hex2dec('00') hex2dec('10') hex2dec('1E') hex2dec('5A') hex2dec('1A') hex2dec('98') hex2dec('3A') hex2dec('00')];
     elseif(level==4)
+        period_us = 1000; %Tuloma 2nd season
         frame_size=256; % задать число пикселей ФПУ / number of pixels on FS
         num_of_frames=5000; % задать число фреймов в пакете / number of frames per packet        
         dimx_ecasic = 8; %задать размер по х блока данных, выдаваемый платой ECASIC
@@ -76,10 +79,13 @@ function exit_code = this(path, level, Ts)
         magic_word = [hex2dec('03') hex2dec('0C') hex2dec('1E') hex2dec('5A') hex2dec('1A') hex2dec('20') hex2dec('4E') hex2dec('00')];
     else
         if(level==1)
+            period_us = 2.5; %Mini-EUSO L1 (Tuloma 1st season)
             magic_word = [hex2dec('01') hex2dec('0A') hex2dec('01') hex2dec('5A') hex2dec('18') hex2dec('80') hex2dec('04') hex2dec('00')];
         elseif(level==2)
+            period_us = 2.5*128; %Mini-EUSO L2 (Tuloma 1st season)
             magic_word = [hex2dec('01') hex2dec('0B') hex2dec('01') hex2dec('5A') hex2dec('18') hex2dec('00') hex2dec('09') hex2dec('00')];
-        elseif(level==3)    
+        elseif(level==3)
+            period_us = 2.5*128*128; %Mini-EUSO L3 (Tuloma 1st season)
             magic_word = [hex2dec('01') hex2dec('0C') hex2dec('01') hex2dec('5A') hex2dec('1C') hex2dec('00') hex2dec('12') hex2dec('00')];
         end
         frame_size=2304; % задать число пикселей ФПУ / number of pixels on FS
@@ -454,15 +460,26 @@ function exit_code = this(path, level, Ts)
         end
     end
     
+   disp 'Generating light curve with lower resolution'
+   if(level==4 || level==5 | level==6)
+       period_us_decim = 20000; 
+       decim_factor = period_us_decim / period_us; 
+       lightcurvesum_global_decim = decimate(lightcurvesum_global, decim_factor);
+       unixtime_dbl_global_decim = unixtime_dbl_global(1:decim_factor:end);
+   end    
+       
    disp 'Saving martixes to .mat file'
 
    if(level==6)
         save([path '/lovozero.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global','lightcurvesum_global', 'pdm_2d_rot_global', 'pdm_2d_sp_global' ,'period_us', '-v7.3');
+        %save([path '/lovozero_lightcurve.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global','lightcurvesum_global', 'period_us', '-v7.3');
+        save([path '/lovozero_decim.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global_decim','lightcurvesum_global_decim', 'period_us_decim', '-v7.3');
    elseif(level==5)
         unixtime_dbl_sp_global = unixtime_dbl_global;
         sp_letter = ["A","I","B","J","C","K","D","L","E","M","F","N","G","Q","H","P"];
         sp_func = ["KC-11","UFS-1","EMPTY","J","430","337","EMPTY","EMPTY","EMPTY","M","EMPTY","EMPTY","EMPTY","Q","H","390"];
         save([path '/tuloma_sp.mat'], 'this_ver', 'this_sub_ver', 'sp_global', 'sp_letter', 'sp_func', 'unixtime_dbl_sp_global', 'D_tushv_global', 'period_us', '-v7.3');
+        save([path '/tuloma_sp_decim.mat'], 'this_ver', 'this_sub_ver', 'sp_global', 'sp_letter', 'sp_func', 'unixtime_dbl_sp_global', 'D_tushv_global', 'period_us', '-v7.3');
    elseif(level==4)
         save([path '/tuloma.mat'], 'this_ver', 'this_sub_ver', 'unixtime_dbl_global', 'lightcurvesum_global', 'pdm_2d_rot_global', 'diag_global',  'period_us', '-v7.3');
    elseif(level==3)
