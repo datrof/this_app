@@ -22,9 +22,12 @@ function exit_code = this(path, level)
     %level=3; %  Data type {raw=1, 1st integrated=2, 2nd integrated=3}
     frame_step=500; % 1 - show all frames, 2 - show ever 2nd frame, etc
     % frame_step=500 для показа одного кадра на файл
-    do_flat=1;  % do flat fielding. Applicable Only for MLT.
-    ff_matrix_txt = readmatrix('ff_20231215.txt'); %flat_fielding txt file
+    do_flat=1;  % do flat fielding. Applicable Only for MLT.filename
+    ff_filename = string(dir('ff*now.txt').name); %flat_fielding txt file. Only with last word 'now'
+    ff_matrix_txt = readmatrix(ff_filename); 
     
+    fprintf('%s\n', 'Flat fielding file is: ');
+    fprintf('%s\n', ff_filename);
     
     mode_2d = 1; % show pictures
       mode_mlt = 1; % show only one EC unit used in MLT
@@ -122,12 +125,12 @@ function exit_code = this(path, level)
     end
     
     if(level==6)
-        pdm_2d_rot_global = uint32(zeros(48,16,numel(listing)*num_of_frames));
-        pdm_2d_sp_global = uint32(zeros(16,8,numel(listing)*num_of_frames));
+        pdm_2d_rot_global = uint32(zeros(48,16, num_of_frames)); % Убираем numel(listing) \ ошибка, большая длина массива
+        pdm_2d_sp_global = uint32(zeros(16,8, num_of_frames)); % Убираем numel(listing)
         %diag_global = uint32(zeros(16,numel(listing)*num_of_frames));
-        lightcurvesum_global = zeros(1,numel(listing)*num_of_frames);
-        unixtime_global = uint32(zeros(1, numel(listing)));
-        ngtu_global = uint32(zeros(1, numel(listing)));
+        lightcurvesum_global = zeros(1,num_of_frames); % Убираем numel(listing)
+        unixtime_global = uint32(zeros(1, 1)); % Убираем numel(listing)
+        ngtu_global = uint32(zeros(1, 1)); % Убираем numel(listing)
         sizeof_point = 4;
         rotation_needed = 0;
     elseif(level==5)
