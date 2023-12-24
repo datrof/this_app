@@ -7,9 +7,10 @@
 % 2 Mini-EUSO L2 (Tuloma 1st season)
 % 1 Mini-EUSO L1 (Tuloma 1st season)
     
-function exit_code = this(path, level)
+function exit_code = this(path)
 
-    level = str2num(level);
+    %level = str2num(level);
+    level = 6;
     
     display('PAIP .dat viewer'); 
 
@@ -125,7 +126,7 @@ function exit_code = this(path, level)
     end
     
     if(level==6)
-        pdm_2d_rot_global = uint32(zeros(48,16, num_of_frames)); % Убираем numel(listing) \ ошибка, большая длина массива
+        pdm_2d_rot_global = uint32(zeros(48,16, num_of_frames)); % Убираем numel(listing) 
         pdm_2d_sp_global = uint32(zeros(16,8, num_of_frames)); % Убираем numel(listing)
         %diag_global = uint32(zeros(16,numel(listing)*num_of_frames));
         lightcurvesum_global = zeros(1,num_of_frames); % Убираем numel(listing)
