@@ -46,6 +46,8 @@ function exit_code = this(path)
 
     n_active_pixels = 256; % needed for lightcurves.
     
+    pause_time = 60; %pause number of seconds with no file
+    
     
 %     Раскомментировать для файла ff_matrix.txt
 %     ff_matrix_txt(:, 25:32) = ff_matrix_txt(:, 41:48);
@@ -58,10 +60,20 @@ function exit_code = this(path)
     else
         if(level==1 || level==3 || level==6)
             listing = dir([path '/frm*.dat']);
+            % продолжение работы программы без файлов
+            while(numel(listing) == 0)
+                display('No .dat files found in the specified folder');
+                pause(pause_time);
+                listing = dir([path '/frm*.dat']);
+            end
         else
             listing = dir([path '/frm*d3*.dat']);
         end
     end
+    
+    %fprintf(class(listing));
+    
+    
     
     if(level==6)
         %period_us = (Ts*1000); %Lovozero
@@ -117,13 +129,6 @@ function exit_code = this(path)
     norm_file_cnt = 1;
     gif_cnt = 0;
     
-
-
-    if(numel(listing) == 0) 
-        display('No .dat files found in the specified folder');
-        exit_code = -1;
-        return;
-    end
     
     if(level==6)
         pdm_2d_rot_global = uint32(zeros(48,16, num_of_frames)); % Убираем numel(listing) 
@@ -175,9 +180,16 @@ function exit_code = this(path)
     % Чтение файлов
     while 1
         listing = dir([path '/frm*.dat']);
+        % продолжение работы программы без файлов
+        while(numel(listing) == 0)
+            display('No .dat files found in the specified folder');
+            title('No files in the folder');
+            pause(pause_time);
+            listing = dir([path '/frm*.dat']);
+        end
+        
         filename_cntr = numel(listing);
-    %for filename_cntr = 1:numel(listing) % указание на номера файлов, из которых будет произведено чтение
-        %цикл, выполняющийся для каждого файла. 
+        
 
         lst = listing(filename_cntr,1);
         filename = [path '/' lst.name]; 
@@ -406,12 +418,19 @@ function exit_code = this(path)
                         pdm_2d_rot_show =  pdm_2d_rot_global(:,:,pdm_2d_rot_global_cnt);
                     end
                     pdm_2d_rot_show(1, 5) = 0;
-                    pdm_limit = 2*mean(pdm_2d_rot_show, 'all');
+                    pdm_limit = 2*mean(nonzeros(pdm_2d_rot_show), 'all'); %nonzeros исключает нули
                     pdm_2d_sp_global(:,:,pdm_2d_rot_global_cnt) = pdm_2d_pc(33:48,25:32);
                     lightcurvesum_global(pdm_2d_rot_global_cnt) = sum(sum(pdm_2d_rot_global(:,:,pdm_2d_rot_global_cnt)))/(256*3);
                     % Онлайн показ файлов на компе
                     imagesc(pdm_2d_rot_show, [0 pdm_limit]); %, [0 15000]
                     colorbar;
+                    %class(short_filename)
+                    year_file = string(short_filename(11:14));
+                    month_file = string(short_filename(15:16));
+                    day_file = string(short_filename(17:18));
+                    hour_file = string(short_filename(19:20));
+                    minute_file = string(short_filename(21:22));
+                    title(strcat(year_file, '/', month_file, '/', day_file, ' | ', hour_file, ':', minute_file) ); %дата и время
                     pause(0.5);
                     
                 end
