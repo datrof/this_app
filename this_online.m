@@ -48,6 +48,10 @@ function exit_code = this(path)
     
     pause_time = 60; %pause number of seconds with no file
     
+    %Создание директории для изображений
+    path_png = strcat(path, '/png_path');
+    mkdir([path_png]);
+    
     
 %     Раскомментировать для файла ff_matrix.txt
 %     ff_matrix_txt(:, 25:32) = ff_matrix_txt(:, 41:48);
@@ -418,10 +422,12 @@ function exit_code = this(path)
                         pdm_2d_rot_show =  pdm_2d_rot_global(:,:,pdm_2d_rot_global_cnt);
                     end
                     pdm_2d_rot_show(1, 5) = 0;
-                    pdm_limit = 2*mean(nonzeros(pdm_2d_rot_show), 'all'); %nonzeros исключает нули
+                    pdm_limit = 2*mean(nonzeros(pdm_2d_rot_show), 'all', 'omitnan'); %nonzeros исключает нули, 'omitnan' исключает значения NaN
                     pdm_2d_sp_global(:,:,pdm_2d_rot_global_cnt) = pdm_2d_pc(33:48,25:32);
                     lightcurvesum_global(pdm_2d_rot_global_cnt) = sum(sum(pdm_2d_rot_global(:,:,pdm_2d_rot_global_cnt)))/(256*3);
                     % Онлайн показ файлов на компе
+                    %nonzeros(pdm_2d_rot_show)
+                    %pdm_limit
                     imagesc(pdm_2d_rot_show, [0 pdm_limit]); %, [0 15000]
                     colorbar;
                     %class(short_filename)
@@ -431,6 +437,10 @@ function exit_code = this(path)
                     hour_file = string(short_filename(19:20));
                     minute_file = string(short_filename(21:22));
                     title(strcat(year_file, '/', month_file, '/', day_file, ' | ', hour_file, ':', minute_file) ); %дата и время
+                    png_name = strcat(year_file, month_file, day_file, '_', hour_file, minute_file, '.png');
+                    
+                    png_save = strcat(path_png, '/', png_name);
+                    saveas(gcf, png_save);
                     pause(0.5);
                     
                 end
